@@ -18,6 +18,38 @@ See `Initializing` for additional setup.
 
 The `get...` functions return some handy `NamedTuple` instances with helpful attributes, notably `FreshbooksInvoice.lines` which have `Decimal` values where you would hope to find them. Also some lookups for addressing the `FreshbooksLine`s you may be interested in.
 
+```python
+
+class FreshbooksInvoice(NamedTuple):
+    lines: list[FreshbooksLine]
+    notes: str
+    client_id: int
+    date: dt.date
+    invoice_id: int
+    number: str
+    organization: str
+    amount: Decimal
+    status: str
+    amount_outstanding: Decimal
+    po_number: str
+    line_id_line_dict: dict
+    line_description_line_dict: dict
+    line_description_line_id_dict: dict
+    contacts: dict[str, dict]
+    allowed_gateways: list
+
+
+class FreshbooksLine(NamedTuple):
+    invoice_id: int
+    client_id: int
+    description: str
+    name: str
+    rate: Decimal
+    line_id: int
+    quantity: Decimal
+    amount: Decimal
+```
+
 Then you have helpers `get_all_draft_invoices`, `get_all_invoices_for_org_name`, `get_all_invoices_for_client_id`, and `get_draft_invoices_for_client_id`.
 
 ### Create an Invoice
@@ -49,6 +81,25 @@ Status can be any of the `v3_status` values as a `str` or `1` or `4` (draft/paid
 `get_all_clients`, `get_one`, `create`, and `delete` are available here.
 
 Once more the `get...` functions return `NamedTuple` instances with some helpful attributes, notably `FreshbooksClient.contacts` and a couple of related lookups (`.contact_id_email_lookup` and `.email_contact_id_lookup`).
+
+```python
+class FreshbooksClient(NamedTuple):
+    client_id: int
+    email: str
+    organization: str
+    first_name: str
+    last_name: str
+    contacts: dict[str, FreshbooksContact]
+    contact_id_email_lookup: dict[int, str]
+    email_contact_id_lookup: dict[str, int]
+
+
+class FreshbooksContact(NamedTuple):
+    contact_id: int
+    first_name: str
+    last_name: str
+    email: str
+```
 
 Then, `update_contacts`, `delete_contact`, `add_contacts`, `get_freshbooks_client_from_client_id`, `get_freshbooks_client_from_email`, and `get_freshbooks_client_from_org_name`.
 
