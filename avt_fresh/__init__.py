@@ -51,7 +51,7 @@ def REQUEST(url, method_name: str, endpoint: str, stuff=None):
     if "//" in the_rest:
         the_rest = the_rest.replace("//", "/")
     rendered_url = f"https://{the_rest}"
-    print(f"{rendered_url=}")
+    print(rendered_url)
     raw_response = method(
         rendered_url,
         **{
