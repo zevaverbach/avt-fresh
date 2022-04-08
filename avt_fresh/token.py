@@ -13,7 +13,7 @@ class OnlyOneToken(Exception):
 
 
 class Token(NamedTuple):
-    id_: int
+    id: int
     access_token: str
     token_type: str
     expires_in: int
@@ -38,8 +38,7 @@ class Token(NamedTuple):
         tokens = self._get_all()
         if len(tokens) == 0:
             raise OnlyOneToken
-        id_ = self.id_
-        del tokens[id_]
+        del tokens[self.id]
         self.make_from_dict(tokens)
 
     @classmethod
