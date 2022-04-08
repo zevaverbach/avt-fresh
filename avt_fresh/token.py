@@ -13,7 +13,7 @@ class OnlyOneToken(Exception):
 
 
 class Token(NamedTuple):
-    id: int
+    id_: int
     access_token: str
     token_type: str
     expires_in: int
@@ -38,7 +38,7 @@ class Token(NamedTuple):
         tokens = self._get_all()
         if len(tokens) == 0:
             raise OnlyOneToken
-        id_ = self.id
+        id_ = self.id_
         del tokens[id_]
         self.make_from_dict(tokens)
 
@@ -50,6 +50,6 @@ class Token(NamedTuple):
             TOKEN_PATH.touch()
         id_ = str(uuid4())
         token_dict["id"] = id_
-        token_dict = {id: token_dict}
+        token_dict = {id_: token_dict}
         with TOKEN_PATH.open("w", encoding="utf-8") as fout:
             json.dump(token_dict, fout)
