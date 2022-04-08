@@ -4,6 +4,13 @@ This is a wrapper of [the roly-poly, not 100% ergonomic Freshbooks web API](http
 
 There are "band-aids" here to work around some of the API's shortcomings.
 
+# Install
+
+```
+pip install avt-fresh
+```
+See `Initializing` for additional setup.
+
 # The Goodies
 
 ## Invoices
@@ -44,12 +51,6 @@ Status can be any of the `v3_status` values as a `str` or `1` or `4` (draft/paid
 Once more the `get...` functions return `NamedTuple` instances with some helpful attributes, notably `FreshbooksClient.contacts` and a couple of related lookups (`.contact_id_email_lookup` and `.email_contact_id_lookup`).
 
 Then, `update_contacts`, `delete_contact`, `add_contacts`, `get_freshbooks_client_from_client_id`, `get_freshbooks_client_from_email`, and `get_freshbooks_client_from_org_name`.
-
-# Install
-
-```
-pip install avt-fresh
-```
 
 # Prerequisites/Configuration
 Make yourself a nice little `.env` file in your home directory or wherever you're going to be calling this library's code. It needs to contain:
