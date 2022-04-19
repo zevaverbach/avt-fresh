@@ -4,12 +4,24 @@ This is a wrapper of [the roly-poly, not 100% ergonomic Freshbooks web API](http
 
 There are "band-aids" here to work around some of the API's shortcomings.
 
-# Install
+# Installation
 
 ```
 pip install avt-fresh
 ```
-See `Initializing` for additional setup.
+
+# Usage
+Instantiate the avt_fresh `Client` like so, and you're off to the races:
+
+```python
+client = Client(client_secret="...", client_id="...", redirect_uri="https://...", account_id="...")
+
+monster_invoices = client.get_all_invoices_for_org_name("Monsters Inc")
+```
+
+You can get and set the required arguments to `Client` [here](https://my.freshbooks.com/#/developer). Well, all of them except `FRESHBOOKS_ACCOUNT_ID`, which you can see (there's got to be another way??) by clicking on one of your invoices and grabbing the substring here: `https://my.freshbooks.com/#/invoice/<THIS THING>-1234567`. 
+
+Don't tell anyone but `redirect_uri` can be pretty much anything! See `Initializing` below 👇.
 
 # The Goodies
 
@@ -104,20 +116,6 @@ class FreshbooksContact(NamedTuple):
 
 Then, `client.update_contacts`, `client.delete_contact`, `client.add_contacts`, `client.get_freshbooks_client_from_client_id`, `client.get_freshbooks_client_from_email`, and `client.get_freshbooks_client_from_org_name`.
 
-# Prerequisites/Configuration
-Instantiate the avt_fresh `Client` like so:
-
-```python
-client = Client(client_secret="...", client_id="...", redirect_uri="https://...", account_id="...")
-```
-
-You can get and set these goodies [here](https://my.freshbooks.com/#/developer). Well, all of them except `FRESHBOOKS_ACCOUNT_ID`, which you can see (there's got to be another way??) by clicking on one of your invoices and grabbing the substring here: `https://my.freshbooks.com/#/invoice/<THIS THING>-1234567`. 
-
-Don't tell anyone but `redirect_uri` can be pretty much anything! See `Initializing` below 👇.
-
-## Security
-Which brings me to an important point. Currently it's going to save your OAuth tokens in the ever-so-insecure path of `~/freshbooks_oauth_token.json`. TODO: don't do this anymore. ¯\_(ツ)_/¯
-
 # Initializing
 When you first call one of the functions which touches the Freshbooks API, you'll be prompted in the terminal like so:
 
@@ -138,6 +136,8 @@ You should only have to do this once in each environment you use this library in
 
 # Hardcoded Stuff / TODOs
 Here are some quirks and TODOs. PRs are welcome!:
+
+OAuth tokens are currently saved in the ever-so-insecure path of `~/freshbooks_oauth_token.json`. TODO: don't do this anymore. ¯\_(ツ)_/¯
 
 Only Python 3.10 is supported at the moment.
 

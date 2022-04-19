@@ -4,7 +4,7 @@ setup(
     name="avt_fresh",
     author="Zev Averbach",
     author_email="zev@averba.ch",
-    version="0.0.12",
+    version="0.0.13",
     license="MIT",
     python_requires=">3.10.0",
     keywords="freshbooks API",
