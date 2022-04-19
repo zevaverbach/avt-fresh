@@ -14,7 +14,7 @@ See `Initializing` for additional setup.
 # The Goodies
 
 ## Invoices
-`get`, `get_one`, `create`, `send`, `update` and `delete` are the bread and butter functions here.
+`client.get_one_invoice`, `client.create_invoice`, `client.send_invoice`, `client.update_invoice` and `client.delete_invoice` are the bread and butter methods here.
 
 The `get...` functions return some handy `NamedTuple` instances with helpful attributes, notably `FreshbooksInvoice.lines` which have `Decimal` values where you would hope to find them. Also some lookups for addressing the `FreshbooksLine`s you may be interested in.
 
@@ -50,13 +50,14 @@ class FreshbooksLine(NamedTuple):
     amount: Decimal
 ```
 
-Then you have helpers `get_all_draft_invoices`, `get_all_invoices_for_org_name`, `get_all_invoices_for_client_id`, and `get_draft_invoices_for_client_id`.
+Then you have helpers `client.get_all_draft_invoices`, `client.get_all_invoices_for_org_name`, `client.get_all_invoices_for_client_id`, and `client.get_draft_invoices_for_client_id`.
 
 ### Create an Invoice
-The signature of `invoice.create` is like so:
+The signature of `client.create_invoice` is like so:
 
 ```python
 def create(
+    self,
     client_id: int,
     notes: str,
     lines: list[dict],
@@ -78,7 +79,7 @@ Status can be any of the `v3_status` values as a `str` or `1` or `4` (draft/paid
 
 
 ## Clients
-`get_all_clients`, `get_one`, `create`, and `delete` are available here.
+`client.get_all_clients`, `client.create_client`, and `client.delete_client` are available here.
 
 Once more the `get...` functions return `NamedTuple` instances with some helpful attributes, notably `FreshbooksClient.contacts` and a couple of related lookups (`.contact_id_email_lookup` and `.email_contact_id_lookup`).
 
@@ -101,21 +102,18 @@ class FreshbooksContact(NamedTuple):
     email: str
 ```
 
-Then, `update_contacts`, `delete_contact`, `add_contacts`, `get_freshbooks_client_from_client_id`, `get_freshbooks_client_from_email`, and `get_freshbooks_client_from_org_name`.
+Then, `client.update_contacts`, `client.delete_contact`, `client.add_contacts`, `client.get_freshbooks_client_from_client_id`, `client.get_freshbooks_client_from_email`, and `client.get_freshbooks_client_from_org_name`.
 
 # Prerequisites/Configuration
-Make yourself a nice little `.env` file in your home directory or wherever you're going to be calling this library's code. It needs to contain:
+Instantiate the avt_fresh `Client` like so:
 
-```bash
-FRESHBOOKS_API_CLIENT_ID='blah'
-FRESHBOOKS_API_CLIENT_SECRET='blah'
-FRESHBOOKS_REDIRECT_URI="https://blah.com/blah"
-FRESHBOOKS_ACCOUNT_ID="blah"
+```python
+client = Client(client_secret="...", client_id="...", redirect_uri="https://...", account_id="...")
 ```
 
 You can get and set these goodies [here](https://my.freshbooks.com/#/developer). Well, all of them except `FRESHBOOKS_ACCOUNT_ID`, which you can see (there's got to be another way??) by clicking on one of your invoices and grabbing the substring here: `https://my.freshbooks.com/#/invoice/<THIS THING>-1234567`. 
 
-Don't tell anyone but `FRESHBOOKS_REDIRECT_URI` can be pretty much anything! See `Initializing` below 👇.
+Don't tell anyone but `redirect_uri` can be pretty much anything! See `Initializing` below 👇.
 
 ## Security
 Which brings me to an important point. Currently it's going to save your OAuth tokens in the ever-so-insecure path of `~/freshbooks_oauth_token.json`. TODO: don't do this anymore. ¯\_(ツ)_/¯
@@ -132,7 +130,7 @@ If you don't have an app there, create a really basic one. Name and description 
 Application Type: "Private App"
 Scopes: `admin:all:legacy`
 
-Add a redirect URI, it can actually be pretty much anything.
+Add a redirect URI, it can actually be pretty much anything. Well, preferably a URL you control since it will receive OAuth tokens.
 
 Finally, once you have an app on that developer page, click into it and click "go to authentication" page. Freshbooks will pop open a tab and go to your redirect URI, appending `?code=blahblahblah` to it. Grab the "blah blah blah" value and paste it into the prompt. 
 
@@ -141,14 +139,12 @@ You should only have to do this once in each environment you use this library in
 # Hardcoded Stuff / TODOs
 Here are some quirks and TODOs. PRs are welcome!:
 
-Currently all invoices will have Stripe added as a payment option. There's no option to skip this, and there's no other payment methods available in this library.
+Only Python 3.10 is supported at the moment.
 
-Also, only Python 3.10 is supported at the moment.
-
-Then, when it comes to invoice statuses, we're only using `v3_status` strings, not the numbers. What's more, when you create an invoice we're only supporting two possible statuses: "draft" and "paid".
+When it comes to invoice statuses, we're only using `v3_status` strings, not the numbers. What's more, when you create an invoice we're only supporting two possible statuses: "draft" and "paid".
 
 The `create`, `update`, and `delete` functions return dictionaries rather than an instance of the appropriate `NamedTuple`. This would be a great improvement!
 
 The docs need improvement for sure: For now, have a peek at the source code, which includes pretty comprehensive type hints at the very least.
 
-There are no tests! Is the other thing. Although this code has been used in production in at least one company with some success.
+There are no tests! However, this code has been used in production in at least one company with some success.

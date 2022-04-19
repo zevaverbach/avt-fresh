@@ -1,12 +1,9 @@
 import datetime as dt
 from decimal import Decimal
 from functools import partial, lru_cache
-from typing import NamedTuple
+import typing
 
-from avt_fresh import BASE_URL, ACCOUNT_ID, REQUEST as __REQUEST
-
-URL = f"{BASE_URL}/accounting/account/{ACCOUNT_ID}/invoices/invoices"
-_REQUEST = partial(__REQUEST, url=URL)
+WHAT = "invoice"
 
 
 class ArgumentError(Exception):
@@ -25,19 +22,7 @@ class InvalidField(Exception):
     pass
 
 
-def _GET(endpoint, params=None):
-    return _REQUEST(method_name="GET", endpoint=endpoint, stuff=params)
-
-
-def _POST(endpoint, data: dict):
-    return _REQUEST(method_name="POST", endpoint=endpoint, stuff=data)
-
-
-def _PUT(endpoint, thing_id: int, data: dict):
-    return _REQUEST(method_name="PUT", endpoint=f"{endpoint}/{thing_id}", stuff=data)
-
-
-class FreshbooksLine(NamedTuple):
+class FreshbooksLine(typing.NamedTuple):
     invoice_id: int
     client_id: int
     description: str
@@ -70,7 +55,7 @@ class FreshbooksLine(NamedTuple):
         }
 
 
-class FreshbooksInvoice(NamedTuple):
+class FreshbooksInvoice(typing.NamedTuple):
     lines: list[FreshbooksLine]
     notes: str
     client_id: int
@@ -123,25 +108,31 @@ class FreshbooksInvoice(NamedTuple):
         )
 
 
-def get_all_draft_invoices():
-    return get(status="draft")
+def get_all_draft_invoices(*, get_func: typing.Callable) -> list[FreshbooksInvoice]:
+    return _get(get_func=get_func, status="draft")
 
 
-def get_all_invoices_for_org_name(org_name: str) -> list[FreshbooksInvoice]:
-    return get(org_name=org_name)
+def get_all_invoices_for_org_name(
+    *, get_func: typing.Callable, org_name: str
+) -> list[FreshbooksInvoice]:
+    return _get(get_func=get_func, org_name=org_name)
 
 
 @lru_cache
-def get_all_invoices_for_client_id(client_id: int) -> list[FreshbooksInvoice]:
-    return get(client_id=client_id)
+def get_all_invoices_for_client_id(
+    *, get_func: typing.Callable, client_id: int
+) -> list[FreshbooksInvoice]:
+    return _get(get_func=get_func, client_id=client_id)
 
 
-def get_draft_invoices_for_client_id(client_id: int) -> list[FreshbooksInvoice]:
-    return get(client_id=client_id, status="draft")
+def get_draft_invoices_for_client_id(
+    *, get_func: typing.Callable, client_id: int
+) -> list[FreshbooksInvoice]:
+    return _get(get_func=get_func, client_id=client_id, status="draft")
 
 
-def get_one(invoice_id) -> FreshbooksInvoice:
-    invoices = get(invoice_id)
+def get_one(*, get_func: typing.Callable, invoice_id: int) -> FreshbooksInvoice:
+    invoices = _get(get_func=get_func, invoice_id=invoice_id)
     if invoices:
         if len(invoices) > 1:
             raise MoreThanOne
@@ -149,12 +140,14 @@ def get_one(invoice_id) -> FreshbooksInvoice:
     raise DoesntExist
 
 
-def get(
+def _get(
+    get_func: typing.Callable,
     invoice_id=None,
     client_id=None,
     org_name=None,
     status=None,
 ) -> list[FreshbooksInvoice]:
+    get_func = partial(get_func, what=WHAT)
 
     if client_id is not None and org_name is not None:
         raise ArgumentError("Please provide either client_id or org_name")
@@ -180,7 +173,7 @@ def get(
         full_url += f"{sep}search[v3_status]={status}"
         sep = "&"
 
-    response = _GET(full_url)
+    response = get_func(endpoint=full_url)
     try:
         num_results = response["total"]
     except KeyError:
@@ -195,7 +188,7 @@ def get(
             f"&include[]=lines&include[]=contacts&include[]=allowed_gateways"
         )
 
-    result = _GET(full_url)
+    result = get_func(endpoint=full_url)
     if "invoice" in result:
         return [FreshbooksInvoice.from_api(**result["invoice"])]
     invoices = result["invoices"]
@@ -221,6 +214,8 @@ STATUS_STRING_INT_LOOKUP = {
 
 
 def create(
+    *,
+    post_func: typing.Callable,
     client_id: int,
     notes: str,
     lines: list[dict],
@@ -256,16 +251,20 @@ def create(
     if po_number:
         data["invoice"]["po_number"] = po_number
 
-    return _POST("", data=data)
+    return post_func(what=WHAT, endpoint="", data=data)
 
 
-def update(invoice_id, **kwargs) -> dict:
-    return _PUT("", invoice_id, dict(invoice=kwargs))
+def update(*, put_func: typing.Callable, invoice_id, **kwargs) -> dict:
+    return put_func(what=WHAT, thing_id=invoice_id, data={"invoice": kwargs})
 
 
-def delete(invoice_id) -> dict:
-    return _PUT("", invoice_id, dict(invoice=dict(vis_state=1)))
+def delete(*, put_func: typing.Callable, invoice_id: int) -> dict:
+    return put_func(what=WHAT, thing_id=invoice_id, data={"invoice": {"vis_state": 1}})
 
 
-def send(invoice_id) -> dict:
-    return _PUT("", invoice_id, {"invoice": {"action_email": True}})
+def send(*, put_func: typing.Callable, invoice_id: int) -> dict:
+    return put_func(
+        what=WHAT,
+        thing_id=invoice_id,
+        data={"invoice": {"action_email": True}},
+    )

@@ -1,12 +1,9 @@
-from functools import partial
-from typing import NamedTuple
+import typing
 
-import requests
-
-from avt_fresh import BASE_URL, REQUEST as __REQUEST, ACCOUNT_ID, make_headers
+WHAT = "client"
 
 
-class FreshbooksContact(NamedTuple):
+class FreshbooksContact(typing.NamedTuple):
     contact_id: int
     first_name: str
     last_name: str
@@ -25,7 +22,7 @@ class FreshbooksContact(NamedTuple):
         }
 
 
-class FreshbooksClient(NamedTuple):
+class FreshbooksClient(typing.NamedTuple):
     client_id: int
     email: str
     organization: str
@@ -57,22 +54,6 @@ class FreshbooksClient(NamedTuple):
         )
 
 
-URL = f"{BASE_URL}/accounting/account/{ACCOUNT_ID}/users/clients"
-_REQUEST = partial(__REQUEST, url=URL)
-
-
-def _GET(endpoint, params=None):
-    return _REQUEST(method_name="GET", endpoint=endpoint, stuff=params)
-
-
-def _POST(endpoint, data: dict):
-    return _REQUEST(method_name="POST", endpoint=endpoint, stuff=data)
-
-
-def _PUT(endpoint, thing_id: int, data: dict):
-    return _REQUEST(method_name="PUT", endpoint=f"{endpoint}/{thing_id}", stuff=data)
-
-
 class NoResult(Exception):
     pass
 
@@ -84,59 +65,74 @@ class MoreThanOne(Exception):
 INCLUDE = "include[]=contacts"
 
 
-def get_freshbooks_client_from_email(email: str) -> FreshbooksClient:
+def get_freshbooks_client_from_email(
+    *, get_func: typing.Callable, email: str
+) -> FreshbooksClient:
     try:
-        return get_one(_GET(f"?search[email]={email}&{INCLUDE}"))
+        return _get_one(
+            get_func(what=WHAT, endpoint=f"?search[email]={email}&{INCLUDE}")
+        )
     except NoResult as e:
         raise NoResult(email) from e
 
 
-def get_freshbooks_client_from_org_name(org_name: str) -> FreshbooksClient:
-    return get_one(_GET(f"?search[organization_like]={org_name}&{INCLUDE}"))
-
-
-def get_freshbooks_client_from_client_id(client_id: int) -> FreshbooksClient:
-    return FreshbooksClient.from_api(**_GET(f"{client_id}?{INCLUDE}")["client"])
-
-
-def get_one(response: dict) -> FreshbooksClient:
-    clients = [FreshbooksClient.from_api(**client) for client in response["clients"]]
-    if len(clients) > 1:
-        print("warning, more than one result, returning the first")
-    elif not clients:
-        raise NoResult
-    return clients[0]
-
-
-def get_all_clients() -> list[FreshbooksClient]:
-    return _GET(f"?{INCLUDE}")
-
-
-def delete(client_id) -> None:
-    requests.put(
-        f"{BASE_URL}/accounting/account/{client_id}",
-        json={"client": {"vis_state": 1}},
-        headers=make_headers(),
+def get_freshbooks_client_from_org_name(
+    *, get_func: typing.Callable, org_name: str
+) -> FreshbooksClient:
+    return _get_one(
+        get_func(what=WHAT, endpoint=f"?search[organization_like]={org_name}&{INCLUDE}")
     )
 
 
+def get_freshbooks_client_from_client_id(
+    *, get_func: typing.Callable, client_id: int
+) -> FreshbooksClient:
+    return FreshbooksClient.from_api(
+        **get_func(what=WHAT, endpoint=f"{client_id}?{INCLUDE}")["client"]
+    )
+
+
+def get_all_clients(*, get_func: typing.Callable) -> list[FreshbooksClient]:
+    response = get_func(what=WHAT, endpoint="")
+    num_results = response["total"]
+    return [FreshbooksClient.from_api(**c) for c in get_func(what=WHAT, endpoint=f"?{INCLUDE}&per_page={num_results}")["clients"]]
+
+
+def delete(*, put_func: typing.Callable, client_id: int) -> None:
+    return put_func(what=WHAT, thing_id=client_id, data={"client": {"vis_state": 1}})
+
+
 def create(
-    first_name: str, last_name: str, email: str, organization: str
+    *,
+    get_func: typing.Callable,
+    post_func: typing.Callable,
+    first_name: str,
+    last_name: str,
+    email: str,
+    organization: str,
 ) -> FreshbooksClient:
     data = {
         "client": dict(
             fname=first_name, lname=last_name, email=email, organization=organization
         )
     }
-    client_id = _POST(endpoint="", data=data)["client"]["id"]
-    return get_freshbooks_client_from_client_id(client_id)
+    client_id = post_func(what=WHAT, endpoint="", data=data)["client"]["id"]
+    return get_freshbooks_client_from_client_id(get_func=get_func, client_id=client_id)
 
 
-def add_contacts(client_id, contacts: list[dict]) -> None:
+def add_contacts(
+    *,
+    get_func: typing.Callable,
+    put_func: typing.Callable,
+    client_id: int,
+    contacts: list[dict],
+) -> None:
     """contacts: [dict(email, fname, lname)]"""
     to_update = []
     new_contacts_email_dict = {c["email"]: c for c in contacts}
-    current_contacts = get_freshbooks_client_from_client_id(client_id).contacts
+    current_contacts = get_freshbooks_client_from_client_id(
+        get_func=get_func, client_id=client_id
+    ).contacts
 
     if current_contacts:
         for email, current_contact in current_contacts.items():
@@ -148,16 +144,21 @@ def add_contacts(client_id, contacts: list[dict]) -> None:
                 del new_contacts_email_dict[new_contact["email"]]
 
     to_update += list(new_contacts_email_dict.values())
-    update_contacts(client_id, to_update)
+    _update_contacts(put_func=put_func, client_id=client_id, contacts=to_update)
 
 
-def delete_contact(client_id, email) -> None:
-    client = get_freshbooks_client_from_client_id(client_id)
+def delete_contact(
+    *, get_func: typing.Callable, put_func: typing.Callable, client_id: int, email: str
+) -> None:
+    client = get_freshbooks_client_from_client_id(
+        get_func=get_func, client_id=client_id
+    )
     contact_to_delete = client.contacts.get(email)
     if contact_to_delete is not None:
-        return update_contacts(
-            client_id,
-            [
+        return _update_contacts(
+            put_func=put_func,
+            client_id=client_id,
+            contacts=[
                 client.dict
                 for client in client.contacts.values()
                 if client != contact_to_delete
@@ -165,13 +166,24 @@ def delete_contact(client_id, email) -> None:
         )
 
 
-def update_contacts(client_id, contacts: list[dict]) -> None:
-    _update_freshbooks_client(client_id, {"contacts": contacts})
-
-
-def _update_freshbooks_client(client_id, data: dict) -> None:
-    requests.put(
-        f"{BASE_URL}/accounting/account/{client_id}",
-        json={"client": data},
-        headers=make_headers(),
+def _update_contacts(
+    *, put_func: typing.Callable, client_id: int, contacts: list[dict]
+) -> None:
+    _update_freshbooks_client(
+        put_func=put_func, client_id=client_id, data={"contacts": contacts}
     )
+
+
+def _update_freshbooks_client(
+    *, put_func: typing.Callable, client_id: int, data: dict
+) -> None:
+    put_func(what=WHAT, thing_id=client_id, data={"client": data})
+
+
+def _get_one(response: dict) -> FreshbooksClient:
+    clients = [FreshbooksClient.from_api(**client) for client in response["clients"]]
+    if len(clients) > 1:
+        print("warning, more than one result, returning the first")
+    elif not clients:
+        raise NoResult
+    return clients[0]
