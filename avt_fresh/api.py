@@ -172,7 +172,7 @@ class ApiClient:
     def get_default_payment_options(self) -> dict:
         return get_default_payment_options(get_func=self._GET)
 
-    def add_payment_option_to_invoice(self, invoice_id: int, gateway_name: str) -> dict:
+    def add_payment_option_to_invoice(self, invoice_id: int, gateway_name: str = "stripe") -> dict:
         return add_payment_option_to_invoice(
             post_func=self._POST, invoice_id=invoice_id, gateway_name=gateway_name
         )
