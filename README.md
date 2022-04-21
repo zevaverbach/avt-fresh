@@ -2,7 +2,7 @@
 
 This is a wrapper of [the roly-poly, not 100% ergonomic Freshbooks web API](https://www.freshbooks.com/api/start). It is far from comprehensive: It was created for the specific client- and invoice-related needs of [Averbach Transcription](https://avtranscription.com).
 
-There are "band-aids" here to work around some of the API's shortcomings.
+There are "band-aids" here to work around some of the API's shortcomings. For example, you don't have to deal with pagination at all. 🎉
 
 # Installation
 

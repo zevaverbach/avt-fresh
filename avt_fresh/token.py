@@ -4,6 +4,9 @@ from typing import NamedTuple
 from uuid import uuid4
 
 
+TOKEN_PATH = Path("freshbooks_oauth_token.json")
+
+
 class NoToken(Exception):
     pass
 
@@ -23,7 +26,6 @@ class Token(NamedTuple):
 
     @classmethod
     def _get_all(cls) -> dict:
-        TOKEN_PATH = Path("~/freshbooks_oauth_token.json").expanduser()
         if not TOKEN_PATH.exists():
             raise NoToken
         with TOKEN_PATH.open(encoding="utf-8") as fin:
@@ -43,7 +45,6 @@ class Token(NamedTuple):
 
     @classmethod
     def make_from_dict(cls, token_dict: dict) -> None:
-        TOKEN_PATH = Path("~/freshbooks_oauth_token.json").expanduser()
         if not TOKEN_PATH.exists():
             print(f"token JSON didn't exist, creating it at {TOKEN_PATH}:")
             TOKEN_PATH.touch()

@@ -95,7 +95,12 @@ def get_freshbooks_client_from_client_id(
 def get_all_clients(*, get_func: typing.Callable) -> list[FreshbooksClient]:
     response = get_func(what=WHAT, endpoint="")
     num_results = response["total"]
-    return [FreshbooksClient.from_api(**c) for c in get_func(what=WHAT, endpoint=f"?{INCLUDE}&per_page={num_results}")["clients"]]
+    return [
+        FreshbooksClient.from_api(**c)
+        for c in get_func(what=WHAT, endpoint=f"?{INCLUDE}&per_page={num_results}")[
+            "clients"
+        ]
+    ]
 
 
 def delete(*, put_func: typing.Callable, client_id: int) -> None:
