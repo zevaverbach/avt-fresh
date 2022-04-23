@@ -19,7 +19,6 @@ class OnlyOneToken(Exception):
 
 
 class TokenTup(typing.NamedTuple):
-    id: int
     access_token: str
     token_type: str
     expires_in: int
