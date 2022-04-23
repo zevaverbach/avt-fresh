@@ -30,7 +30,7 @@ from avt_fresh.payments import (
     get_default_payment_options,
     add_payment_option_to_invoice,
 )
-from avt_fresh.token import Token, NoToken
+from avt_fresh.token import TokenStoreOnDisk, NoToken, Token
 
 
 BASE_URL = "https://api.freshbooks.com"
@@ -48,13 +48,15 @@ class AvtFreshException(Exception):
 
 class ApiClient:
     def __init__(
-        self, client_secret: str, client_id: str, redirect_uri: str, account_id: str
+        self, client_secret: str, client_id: str, redirect_uri: str, account_id: str,
+        token_store: Token = TokenStoreOnDisk, connection_string: str | None = None,
     ):
         self.client_secret = client_secret
         self.client_id = client_id
         self.redirect_uri = redirect_uri
         self.account_id = account_id
         self.url_lookup = self._make_url_lookup(account_id)
+        self.token_store = token_store(connection_string)
 
     def make_headers(self):
         return {**HEADERS, "Authorization": f"Bearer {self._get_access_token()}"}
@@ -64,35 +66,32 @@ class ApiClient:
             token = self._get_token_from_api_with_authorization_code(
                 authorization_code=authorization_code
             )
-            _save_token(token)
+            self.token_store.set(token)
             return token["access_token"]
 
         try:
-            token = Token.get()
+            token = self.token_store.get()
         except NoToken:
             auth_code = _get_code_from_user()
             token_dict = self._get_token_from_api_with_authorization_code(auth_code)
-            _save_token(token_dict)
-            token = Token.get()
+            self.token_store.set(token_dict)
+            token = self.token_store.get()
         if not _is_expired(token):
             return token.access_token
 
-        old_token = token
         try:
-            token = self._get_token_from_api_with_refresh_token(
-                refresh_token=old_token.refresh_token
+            token_dict = self._get_token_from_api_with_refresh_token(
+                refresh_token=token.refresh_token
             )
         except AvtFreshException:
             auth_code = _get_code_from_user()
             token_dict = self._get_token_from_api_with_authorization_code(auth_code)
-            old_token.delete()
-            _save_token(token_dict)
-            token = Token.get()
+            self.token_store.set(token_dict)
+            token = self.token_store.get()
             return token.access_token
         else:
-            old_token.delete()
-            _save_token(token)
-            return token["access_token"]
+            self.token_store.set(token_dict)
+            return token_dict["access_token"]
 
     def _get_token_from_api_with_authorization_code(
         self, authorization_code: str
@@ -318,10 +317,6 @@ def _get_code_from_user() -> str:
         "Please go here and get an auth code: "
         "https://my.freshbooks.com/#/developer, then enter it here: "
     )
-
-
-def _save_token(token_response: dict) -> None:
-    Token.make_from_dict(token_response)
 
 
 def _is_expired(token: Token) -> bool:
