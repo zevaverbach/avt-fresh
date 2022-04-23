@@ -11,6 +11,7 @@ setup(
     url="https://github.com/zevaverbach/avt-fresh",
     install_requires=[
         "requests",
+        "redis",
     ],
     packages=[
         "avt_fresh",
