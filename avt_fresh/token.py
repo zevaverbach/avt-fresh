@@ -2,7 +2,7 @@ import abc
 from dataclasses import dataclass
 import json
 from pathlib import Path
-from uuid import uuid4
+import typing
 
 import redis
 
@@ -18,8 +18,7 @@ class OnlyOneToken(Exception):
     pass
 
 
-@dataclass
-class Token:
+class TokenTup(typing.NamedTuple):
     id: int
     access_token: str
     token_type: str
@@ -27,6 +26,10 @@ class Token:
     refresh_token: str
     scope: str
     created_at: int
+
+
+@dataclass
+class Token:
 
     @abc.abstractmethod
     def get(cls) -> "Token":
@@ -47,11 +50,11 @@ class TokenStoreOnDisk(Token):
         super().__init__(**kwargs)
 
     @classmethod
-    def get(cls) -> Token:
+    def get(cls) -> TokenTup:
         if not TOKEN_PATH.exists():
             raise NoToken
         with TOKEN_PATH.open(encoding="utf-8") as fin:
-            return Token(**json.load(fin))
+            return TokenTup(**json.load(fin))
 
     @classmethod
     def set(cls, token_dict: dict) -> None:
@@ -68,11 +71,11 @@ class TokenStoreOnRedis(Token):
         super().__init__(**kwargs)
         self.redis_client = redis.from_url(redis_url)
 
-    def get(self):
+    def get(self) -> TokenTup:
         result = self.redis_client.get(TOKEN_KEY)
         if result is None:
             raise NoToken
-        return Token(**json.loads(result))
+        return TokenTup(**json.loads(result))
 
     def set(self, token_dict: dict) -> None:
         self.redis_client.set(TOKEN_KEY, json.dumps(token_dict))
