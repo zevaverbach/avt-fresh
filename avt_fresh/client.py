@@ -1,11 +1,8 @@
 import typing
 
-import rich.repr
-
 WHAT = "client"
 
 
-@rich.repr.auto
 class FreshbooksContact(typing.NamedTuple):
     contact_id: int
     first_name: str
@@ -23,9 +20,13 @@ class FreshbooksContact(typing.NamedTuple):
             "fname": self.first_name,
             "lname": self.last_name,
         }
+    def __rich_repr__(self):
+        yield "contact_id", self.contact_id
+        yield "first_name", self.first_name
+        yield "last_name", self.last_name
+        yield "email", self.email
 
 
-@rich.repr.auto
 class FreshbooksClient(typing.NamedTuple):
     client_id: int
     email: str
@@ -56,6 +57,14 @@ class FreshbooksClient(typing.NamedTuple):
             contact_id_email_lookup=contact_id_email_lookup,
             email_contact_id_lookup=email_contact_id_lookup,
         )
+
+    def __rich_repr__(self):
+        yield "client_id", self.client_id
+        yield "email", self.email
+        yield "organization", self.organization
+        yield "first_name", self.first_name
+        yield "last_name", self.last_name
+        yield "contacts", self.contacts
 
 
 class NoResult(Exception):

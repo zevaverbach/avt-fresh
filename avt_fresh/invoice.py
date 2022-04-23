@@ -3,8 +3,6 @@ import decimal
 import functools
 import typing
 
-import rich.repr
-
 
 WHAT = "invoice"
 
@@ -25,7 +23,6 @@ class InvalidField(Exception):
     pass
 
 
-@rich.repr.auto
 class FreshbooksLine(typing.NamedTuple):
     invoice_id: int
     client_id: int
@@ -58,16 +55,15 @@ class FreshbooksLine(typing.NamedTuple):
             "quantity": str(self.quantity),
         }
 
-    # def __rich_repr__(self):
-    #     yield "line_id", self.line_id
-    #     yield "description", self.description
-    #     yield "amount", self.amount
-    #     yield "quantity", self.quantity
-    #     yield "rate", self.rate
-    #     yield "name", self.name
+    def __rich_repr__(self):
+        yield "line_id", self.line_id
+        yield "description", self.description
+        yield "amount", self.amount
+        yield "quantity", self.quantity
+        yield "rate", self.rate
+        yield "name", self.name
 
 
-@rich.repr.auto
 class FreshbooksInvoice(typing.NamedTuple):
     lines: list[FreshbooksLine]
     notes: str
@@ -120,15 +116,15 @@ class FreshbooksInvoice(typing.NamedTuple):
             status=kwargs["v3_status"],
         )
 
-    # def __rich_repr__(self):
-    #     yield "invoice_id", self.invoice_id
-    #     yield "organization", self.organization
-    #     yield "date", self.date
-    #     yield "status", self.status
-    #     yield "amount", self.amount
-    #     yield "lines", self.lines
-        # yield "contacts", self.contacts
-        # yield "invoice_number", self.number
+    def __rich_repr__(self):
+        yield "invoice_id", self.invoice_id
+        yield "invoice_number", self.number
+        yield "organization", self.organization
+        yield "date", self.date
+        yield "status", self.status
+        yield "amount", self.amount
+        yield "lines", self.lines
+        yield "contacts", self.contacts
 
 
 def get_all_draft_invoices(*, get_func: typing.Callable) -> list[FreshbooksInvoice]:
