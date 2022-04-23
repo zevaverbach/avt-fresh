@@ -28,9 +28,6 @@ class Token:
     scope: str
     created_at: int
 
-    def __init__(self, *args):
-        ...
-
     @abc.abstractmethod
     def get(cls) -> "Token":
         ...
@@ -46,8 +43,8 @@ class Token:
 
 class TokenStoreOnDisk(Token):
 
-    def __init__(self, *args):
-        super().__init__(*args)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     @classmethod
     def get(cls) -> Token:
@@ -67,9 +64,8 @@ class TokenStoreOnDisk(Token):
 
 class TokenStoreOnRedis(Token):
 
-    def __init__(self, *args):
-        super().__init__(*args)
-        redis_url = args[0]
+    def __init__(self, redis_url, **kwargs):
+        super().__init__(**kwargs)
         self.redis_client = redis.from_url(redis_url)
 
     def get(self):
