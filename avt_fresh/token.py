@@ -76,6 +76,7 @@ class TokenStoreOnRedis(Token):
         result = self.redis_client.get(TOKEN_KEY)
         if result is None:
             raise NoToken
+        return json.loads(result)
 
     def set(self, token_dict: dict) -> None:
         self.redis_client.set(TOKEN_KEY, json.dumps(token_dict))
