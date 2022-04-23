@@ -56,8 +56,8 @@ class TokenStoreOnDisk(TokenStore):
 
 
 class TokenStoreOnRedis(TokenStore):
-    def __init__(self, redis_url):
-        self.redis_client = redis.from_url(redis_url)
+    def __init__(self, redis_url, redis_db_num: int = 0):
+        self.redis_client = redis.from_url(redis_url, db=redis_db_num)
 
     def get(self) -> TokenTup:
         result = self.redis_client.get(TOKEN_KEY)
