@@ -54,6 +54,14 @@ class FreshbooksLine(typing.NamedTuple):
             "quantity": str(self.quantity),
         }
 
+    def __rich_repr__(self):
+        yield "line_id", self.line_id
+        yield "description", self.description
+        yield "amount", self.amount
+        yield "quantity", self.quantity
+        yield "rate", self.rate
+        yield "name", self.name
+
 
 class FreshbooksInvoice(typing.NamedTuple):
     lines: list[FreshbooksLine]
@@ -106,6 +114,16 @@ class FreshbooksInvoice(typing.NamedTuple):
             contacts={contact["email"]: contact for contact in kwargs["contacts"]},
             status=kwargs["v3_status"],
         )
+
+    def __rich_repr__(self):
+        yield "invoice_id", self.invoice_id
+        yield "organization", self.organization
+        yield "date", self.date
+        yield "status", self.status
+        yield "amount", self.amount
+        yield "lines", self.lines
+        yield "contacts", self.contacts
+        yield "invoice_number", self.number
 
 
 def get_all_draft_invoices(*, get_func: typing.Callable) -> list[FreshbooksInvoice]:
