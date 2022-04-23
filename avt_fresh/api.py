@@ -30,7 +30,7 @@ from avt_fresh.payments import (
     get_default_payment_options,
     add_payment_option_to_invoice,
 )
-from avt_fresh.token import TokenStoreOnDisk, NoToken, Token
+from avt_fresh.token import TokenStoreOnDisk, NoToken, TokenStore, TokenTup
 
 
 BASE_URL = "https://api.freshbooks.com"
@@ -48,8 +48,13 @@ class AvtFreshException(Exception):
 
 class ApiClient:
     def __init__(
-        self, client_secret: str, client_id: str, redirect_uri: str, account_id: str,
-        token_store: Token = TokenStoreOnDisk, connection_string: str | None = None,
+        self,
+        client_secret: str,
+        client_id: str,
+        redirect_uri: str,
+        account_id: str,
+        token_store: TokenStore = TokenStoreOnDisk,
+        connection_string: str | None = None,
     ):
         self.client_secret = client_secret
         self.client_id = client_id
@@ -319,7 +324,7 @@ def _get_code_from_user() -> str:
     )
 
 
-def _is_expired(token: Token) -> bool:
+def _is_expired(token: TokenTup) -> bool:
     return dt.datetime.now().timestamp() > token.created_at + token.expires_in
 
 

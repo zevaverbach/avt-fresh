@@ -29,18 +29,16 @@ class TokenTup(typing.NamedTuple):
 
 @dataclass
 class TokenStore(metaclass=abc.ABCMeta):
-
     @abc.abstractmethod
-    def get(cls) -> TokenTup:
+    def get(self) -> TokenTup:
         ...
 
     @abc.abstractmethod
-    def set(cls, token_dict: dict) -> None:
+    def set(self, token_dict: dict) -> None:
         ...
 
 
 class TokenStoreOnDisk(TokenStore):
-
     @classmethod
     def get(cls) -> TokenTup:
         if not TOKEN_PATH.exists():
@@ -58,7 +56,6 @@ class TokenStoreOnDisk(TokenStore):
 
 
 class TokenStoreOnRedis(TokenStore):
-
     def __init__(self, redis_url):
         self.redis_client = redis.from_url(redis_url)
 
