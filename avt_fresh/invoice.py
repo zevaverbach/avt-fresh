@@ -1,6 +1,6 @@
 import datetime as dt
-from decimal import Decimal
-from functools import partial, lru_cache
+import decimal
+import functools
 import typing
 
 WHAT = "invoice"
@@ -27,22 +27,22 @@ class FreshbooksLine(typing.NamedTuple):
     client_id: int
     description: str
     name: str
-    rate: Decimal
+    rate: decimal.Decimal
     line_id: int
-    quantity: Decimal
-    amount: Decimal
+    quantity: decimal.Decimal
+    amount: decimal.Decimal
 
     @classmethod
     def from_api(cls, **kwargs):
         return cls(
             invoice_id=kwargs["invoice_id"],
             client_id=kwargs["client_id"],
-            rate=Decimal(kwargs["unit_cost"]["amount"]),
+            rate=decimal.Decimal(kwargs["unit_cost"]["amount"]),
             description=kwargs["description"],
             name=kwargs["name"],
-            quantity=Decimal(kwargs["qty"]),
+            quantity=decimal.Decimal(kwargs["qty"]),
             line_id=kwargs["lineid"],
-            amount=Decimal(kwargs["amount"]["amount"]),
+            amount=decimal.Decimal(kwargs["amount"]["amount"]),
         )
 
     @property
@@ -63,9 +63,9 @@ class FreshbooksInvoice(typing.NamedTuple):
     invoice_id: int
     number: str
     organization: str
-    amount: Decimal
+    amount: decimal.Decimal
     status: str
-    amount_outstanding: Decimal
+    amount_outstanding: decimal.Decimal
     po_number: str
     line_id_line_dict: dict
     line_description_line_dict: dict
@@ -101,8 +101,8 @@ class FreshbooksInvoice(typing.NamedTuple):
             number=kwargs["invoice_number"],
             organization=kwargs["organization"],
             allowed_gateways=kwargs["allowed_gateways"],
-            amount=Decimal(kwargs["amount"]["amount"]),
-            amount_outstanding=Decimal(kwargs["outstanding"]["amount"]),
+            amount=decimal.Decimal(kwargs["amount"]["amount"]),
+            amount_outstanding=decimal.Decimal(kwargs["outstanding"]["amount"]),
             contacts={contact["email"]: contact for contact in kwargs["contacts"]},
             status=kwargs["v3_status"],
         )
@@ -115,10 +115,11 @@ def get_all_draft_invoices(*, get_func: typing.Callable) -> list[FreshbooksInvoi
 def get_all_invoices_for_org_name(
     *, get_func: typing.Callable, org_name: str
 ) -> list[FreshbooksInvoice]:
-    return _get(get_func=get_func, org_name=org_name)
+    from avt_fresh.client import get_freshbooks_client_from_org_name
+    client_id = get_freshbooks_client_from_org_name(get_func=get_func, org_name=org_name).client_id
+    return get_all_invoices_for_client_id(get_func=get_func, client_id=client_id)
 
 
-@lru_cache
 def get_all_invoices_for_client_id(
     *, get_func: typing.Callable, client_id: int
 ) -> list[FreshbooksInvoice]:
@@ -147,7 +148,7 @@ def _get(
     org_name=None,
     status=None,
 ) -> list[FreshbooksInvoice]:
-    get_func = partial(get_func, what=WHAT)
+    get_func = functools.partial(get_func, what=WHAT)
 
     if client_id is not None and org_name is not None:
         raise ArgumentError("Please provide either client_id or org_name")

@@ -1,23 +1,18 @@
 # AVT Fresh!
 
-This is a wrapper of [the Freshbooks web API](https://www.freshbooks.com/api/start). It is far from comprehensive: It was created for the specific client- and invoice-related needs of [Averbach Transcription](https://avtranscription.com).
+This is a wrapper of [the Freshbooks web API](https://www.freshbooks.com/api/start). It is far from comprehensive: It was created for the specific client- and invoice-related needs of [Averbach Transcription](https://avtranscription.com). However, there are "band-aids" here to work around some of the API's shortcomings. For example, you don't have to deal with pagination at all. 🎉
 
-There are "band-aids" here to work around some of the API's shortcomings. For example, you don't have to deal with pagination at all. 🎉
+Install it with `pip install avt-fresh`.
 
-# Installation
-
-```
-pip install avt-fresh
-```
-
-# Usage
-Instantiate the avt_fresh `Client` like so, and you're off to the races:
+Here's how you use it:
 
 ```python
 from avt_fresh import ApiClient
 
 client = ApiClient(client_secret="...", client_id="...", redirect_uri="https://...", account_id="...")
+
 monster_invoices = client.get_all_invoices_for_org_name("Monsters Inc")
+client.get_one_invoice(12345)
 ```
 
 You can get and set the required arguments to `ApiClient` [here](https://my.freshbooks.com/#/developer). Well, all of them except `FRESHBOOKS_ACCOUNT_ID`, which you can see (there's got to be another way??) by clicking on one of your invoices and grabbing the substring here: `https://my.freshbooks.com/#/invoice/<THIS THING>-1234567`. 
@@ -145,8 +140,8 @@ client = Client(
     client_id="...", 
     redirect_uri="https://...", 
     account_id="...",
-		token_store=avt_fresh.token.TokenStoreOnRedis,
-	  connection_string="rediss://..."	,
+    token_store=avt_fresh.token.TokenStoreOnRedis,
+    connection_string="redis://..."     ,
 )
 ```
 
