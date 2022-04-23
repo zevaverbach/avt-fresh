@@ -134,10 +134,25 @@ Finally, once you have an app on that developer page, click into it and click "g
 
 You should only have to do this once in each environment you use this library in.
 
+# OAuth Token Stores
+
+By default this library stores OAuth tokens on disk in whatever working directory its methods are called from. As an alternative you can use Redis via the `avt_fresh.token.TokenStoreOnRedis` at instantiation of an `ApiClient` like so:
+
+```python
+client = Client(
+    client_secret="...", 
+    client_id="...", 
+    redirect_uri="https://...", 
+    account_id="...",
+		token_store=avt_fresh.token.TokenStoreOnRedis,
+	  connection_string="redis://..."	,
+)
+```
+
+As a further alternative, feel free to implement and inject your own! See `avt_fresh.token.TokenStore` for the API, but tl;dr simply inherit from `TokenStore` and implement `get()` and `set()` methods, the former of which should return an instance of `avt_fresh.token.TokenTup`.
+
 # Hardcoded Stuff / TODOs
 Here are some quirks and TODOs. PRs are welcome!:
-
-OAuth tokens are currently saved in the ever-so-insecure path of `~/freshbooks_oauth_token.json`. TODO: don't do this anymore. ¯\_(ツ)_/¯
 
 Only Python 3.10 is supported at the moment.
 

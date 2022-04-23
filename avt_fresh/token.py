@@ -28,14 +28,10 @@ class TokenTup(typing.NamedTuple):
 
 
 @dataclass
-class Token:
+class TokenStore(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def get(cls) -> "Token":
-        ...
-
-    @abc.abstractmethod
-    def delete(self) -> None:
+    def get(cls) -> TokenTup:
         ...
 
     @abc.abstractmethod
@@ -43,10 +39,7 @@ class Token:
         ...
 
 
-class TokenStoreOnDisk(Token):
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+class TokenStoreOnDisk(TokenStore):
 
     @classmethod
     def get(cls) -> TokenTup:
@@ -64,10 +57,9 @@ class TokenStoreOnDisk(Token):
             json.dump(token_dict, fout)
 
 
-class TokenStoreOnRedis(Token):
+class TokenStoreOnRedis(TokenStore):
 
-    def __init__(self, redis_url, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, redis_url):
         self.redis_client = redis.from_url(redis_url)
 
     def get(self) -> TokenTup:
