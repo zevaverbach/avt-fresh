@@ -1,8 +1,11 @@
 import typing
 
+import rich.repr
+
 WHAT = "client"
 
 
+@rich.repr.auto
 class FreshbooksContact(typing.NamedTuple):
     contact_id: int
     first_name: str
@@ -22,6 +25,7 @@ class FreshbooksContact(typing.NamedTuple):
         }
 
 
+@rich.repr.auto
 class FreshbooksClient(typing.NamedTuple):
     client_id: int
     email: str
